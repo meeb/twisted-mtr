@@ -124,13 +124,14 @@ my_traceroute_object = TraceRoute(
 ```
 
 You may leave `local_ipv4` or `local_ipv6` out if your system only has IPv4
-or IPv6 available, however one of them must be set or an exception will be
-raised.
+or IPv6 available, however at least one of them must be set or an exception
+will be raised.
 
-You can, for obvious reasons, only issue IPv4 traceroutes if `local_ipv4` is
-set and you can only issue IPv6 traceroutes if `local_ipv6` is set.
+You can, for obvious reasons, only send IPv4 traceroutes if `local_ipv4` is
+set and you can only send IPv6 traceroutes if `local_ipv6` is set.
 
-If you set your `local_ipv*` address incorrectly an exception will be raised.
+If you set your `local_ipv*` address incorrectly your traceroutes may trigger
+the error callback with a network error or simply time out.
 
 Once your `TraceRoute` object has been created you start a traceroute with
 the following method:
