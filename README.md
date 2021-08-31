@@ -76,7 +76,8 @@ local_ipv4 = ipaddress.IPv4Address('10.11.22.33')
 target_ipv4 = ipaddress.IPv4Address('1.1.1.1')
 
 # Create the Twisted Protocol instance
-app_mtr = mtr.TraceRoute(mtr_binary_path=mtr_binary_path,local_ipv4=local_ipv4)
+app_mtr = mtr.TraceRoute(mtr_binary_path=mtr_binary_path,
+                         local_ipv4=local_ipv4)
 
 # Spawn the mtr-packet process attached to the protocol
 reactor.spawnProcess(app_mtr, mtr_binary_name, [mtr_binary_path], {})
@@ -106,6 +107,79 @@ See [example-trace.py](example-trace.py) for an example implementation with
 multiple IPv4 and IPv6 traceroutes running concurrently.
 
 
+# API synopsis
+
+`twisted-mtr` has really only one class you would interact with at
+`twisted_mtr.mtr.TraceRoute` that takes the following parameters:
+
+```python
+my_traceroute_object = TraceRoute(
+    # Full path to your mtr-packet binary
+    mtr_binary_path='/usr/bin/mtr-packet',
+    # An IPv4Address object for your local (source) IPv4 address
+    local_ipv4=ipaddress.IPv4Adddress('127.2.3.4'),
+    # An IPv6Address object for your local (source) IPv6 address
+    local_ipv6=ipaddress.IPv6Adddress('::1')
+)
+```
+
+You may leave `local_ipv4` or `local_ipv6` out if your system only has IPv4
+or IPv6 available, however one of them must be set or an exception will be
+raised.
+
+You can, for obvious reasons, only issue IPv4 traceroutes if `local_ipv4` is
+set and you can only issue IPv6 traceroutes if `local_ipv6` is set.
+
+If you set your `local_ipv*` address incorrectly an exception will be raised.
+
+Once your `TraceRoute` object has been created you start a traceroute with
+the following method:
+
+```python
+my_traceroute_object.trace(
+    # Must be a function that exists or a lambda
+    success_callback_function,
+    # Must be a function that exists or a lambda
+    failure_callback_function,
+    # An IPv4Address or IPv6Address object of the address to traceroute to
+    ipaddress.IPv4Address('1.1.1.1')
+)
+```
+
+When the traceroute completes or errors the callbacks will be called with the
+following parameters:
+
+```python
+def success_callback_function(target_ip, hops):
+    # target_ip is an IPvNAddress object of the address the traceroute was to
+    print(f'Completed trace to: {target_ip}')
+    # hops is a list of the traceroute hops, each hop has 3 parameters, e.g.
+    #hops = [
+    #    (1, '10.0.0.1', 20),
+    #    (2, '22.22.22.22', 111),
+    #    (3, '33.33.33.33', 222),
+    #    (4,  None, None),
+    #    (5, '55.55.55.55', 444),
+    #]
+    # The IP and milliseconds of the hop may be None if the hop did not
+    # respond to the traceroute request or it timed out
+    for hop in hops:
+        hop_number, hop_ip, latency_in_milliseconds = hop
+        print(f' - {hop}: {hop_ip} {latency_in_milliseconds} ms')
+
+def failure_callback_function(hop_number, request, error, extra):
+    # Errors are things like mtr-packet return a serious error for your
+    # traceroute request or network errors, not Python errors.
+    #
+    # hop_number is the traceroute hop where the error occured
+    # request the mtr-packet request that generated the error
+    # error is the error message as a string
+    # extra is any addtional data that was bundled with the request
+    print(f'An error occured at hop {hop_number} sending MTR request '
+          f'"{request}" with error: {error}')
+```
+
+
 # Tests
 
 There is a test suite that you can run by cloning this repository, installing
@@ -114,6 +188,13 @@ the required dependancies and execuiting:
 ```bash
 $ make test
 ```
+
+
+# Debugging
+
+`twisted-mtr` will emit debug logs if you use Python's logging module. Enable
+them with `level=logging.DEBUG` in your application when you initialise your
+logger.
 
 
 # Contributing
