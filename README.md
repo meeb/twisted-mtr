@@ -11,7 +11,7 @@ fully asynchronous IPv4 and IPv6 traceroutes.
 ## Installation
 
 `twisted-mtr` requires the Twisted library as a dependancy as well as the the
-mtr-packet` binary to be available in your systems PATH. You can install
+`mtr-packet` binary to be available in your systems PATH. You can install
 `twisted-mtr` via pip:
 
 ```bash
