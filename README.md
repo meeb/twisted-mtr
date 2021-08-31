@@ -43,7 +43,8 @@ $ apk add mtr
 ```
 
 Consult whatever package manager your system uses if it's not one of the above
-examples. There may not be a suitable option for Windows systems.
+examples. There may not be a suitable option for Windows systems and Windows
+support has not been tested.
 
 Once you have Python, Twisted, the `twisted-mtr` library and the `mtr-packet`
 binary installed you are good to go.
@@ -63,6 +64,7 @@ A basic example would be:
 
 ```python
 import ipaddress
+from twisted.internet import reactor 
 from twisted_mtr import utils, mtr
 
 # Find mtr-packet

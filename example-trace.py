@@ -12,7 +12,7 @@ import sys
 import signal
 import logging
 import ipaddress
-from twisted.internet import protocol, reactor, endpoints
+from twisted.internet import reactor
 from twisted_mtr import logger, errors, mtr, utils
 
 
