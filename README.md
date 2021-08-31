@@ -4,7 +4,7 @@ A Python Twisted library that performs asynchronous high performance
 traceroutes using mtr-packet.
 
 `twisted-mtr` is designed to enable Twisted (as in the
-(Python Twisted networking framework)[https://twistedmatrix.com/]) to perform
+[Python Twisted networking framework](https://twistedmatrix.com/) to perform
 fully asynchronous IPv4 and IPv6 traceroutes.
 
 
@@ -102,7 +102,7 @@ app_mtr.trace(traceroute_complete, trace_error, target_ip)
 reactor.run()
 ```
 
-See (example-trace.py)[example-trace.py] for an example implementation with
+See [example-trace.py](example-trace.py) for an example implementation with
 multiple IPv4 and IPv6 traceroutes running concurrently.
 
 
