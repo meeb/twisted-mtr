@@ -49,13 +49,13 @@ class TwstedMTRTestCase(unittest.TestCase):
 
     def test_traceroute(self):
 
-        done = {4: False, 6: True}
+        done = {'icmp4': False, 'icmp6': False, 'tcp4': False, 'tcp6': False}
 
         def _check_tests_done():
-            if done[4] and done[6]:
+            if done['icmp4'] and done['icmp6'] and done['tcp4'] and done['tcp6']:
                 reactor.stop()
 
-        # IPv4
+        # ICMP IPv4
         mtr_binary_name = 'mtr-packet'
         mtr_binary_path = utils.find_binary(mtr_binary_name)
         local_ipv4 = ipaddress.IPv4Address('127.0.0.1')
@@ -70,21 +70,23 @@ class TwstedMTRTestCase(unittest.TestCase):
             self.assertEqual(target_ip, ipaddress.IPv4Address('127.0.0.1'))
             self.assertEqual(len(hops), 1)
             hop = hops[0]
-            counter, hop_ip, ms = hop
+            counter, hop_ip, ms, proto, port = hop
             self.assertEqual(counter, 1)
             self.assertEqual(hop_ip, '127.0.0.1')
             self.assertIsInstance(ms, int)
-            done[4] = True
+            self.assertEqual(proto, 'icmp')
+            self.assertEqual(port, None)
+            done['icmp4'] = True
             _check_tests_done()
 
         def _test_ipv4_error(counter, joined_request, error, extra):
-            done[4] = True
+            done['icmp4'] = True
             _check_tests_done()
         
         target_ip = utils.parse_ip('127.0.0.1')
         app_mtr.trace(_test_ipv4_callback, _test_ipv4_error, target_ip)
 
-        # IPv6
+        # ICMP IPv6
         mtr_binary_name = 'mtr-packet'
         mtr_binary_path = utils.find_binary(mtr_binary_name)
         local_ipv6 = ipaddress.IPv6Address('::1')
@@ -99,19 +101,85 @@ class TwstedMTRTestCase(unittest.TestCase):
             self.assertEqual(target_ip, ipaddress.IPv6Address('::1'))
             self.assertEqual(len(hops), 1)
             hop = hops[0]
-            counter, hop_ip, ms = hop
+            counter, hop_ip, ms, proto, port = hop
             self.assertEqual(counter, 1)
             self.assertEqual(hop_ip, '::1')
             self.assertIsInstance(ms, int)
-            done[6] = True
+            self.assertEqual(proto, 'icmp')
+            self.assertEqual(port, None)
+            done['icmp6'] = True
             _check_tests_done()
 
         def _test_ipv6_error(counter, joined_request, error, extra):
-            done[6] = True
+            done['icmp6'] = True
             _check_tests_done()
         
         target_ip = utils.parse_ip('::1')
         app_mtr.trace(_test_ipv6_callback, _test_ipv6_error, target_ip)
+
+        # TCP IPv4
+        mtr_binary_name = 'mtr-packet'
+        mtr_binary_path = utils.find_binary(mtr_binary_name)
+        local_ipv4 = ipaddress.IPv4Address('127.0.0.1')
+        app_mtr = mtr.TraceRoute(
+            mtr_binary_path=mtr_binary_path,
+            local_ipv4=local_ipv4,
+            local_ipv6=None
+        )
+        reactor.spawnProcess(app_mtr, mtr_binary_name, [mtr_binary_path], {})
+
+        def _test_ipv4_callback(target_ip, hops):
+            self.assertEqual(target_ip, ipaddress.IPv4Address('127.0.0.1'))
+            self.assertEqual(len(hops), 1)
+            hop = hops[0]
+            counter, hop_ip, ms, proto, port = hop
+            self.assertEqual(counter, 1)
+            self.assertEqual(hop_ip, '127.0.0.1')
+            self.assertIsInstance(ms, int)
+            self.assertEqual(proto, 'tcp')
+            self.assertEqual(port, 8080)
+            done['tcp4'] = True
+            _check_tests_done()
+
+        def _test_ipv4_error(counter, joined_request, error, extra):
+            done['tcp4'] = True
+            _check_tests_done()
+        
+        target_ip = utils.parse_ip('127.0.0.1')
+        app_mtr.trace(_test_ipv4_callback, _test_ipv4_error, target_ip,
+                      protocol='tcp', port=8080)
+
+        # TCP IPv6
+        mtr_binary_name = 'mtr-packet'
+        mtr_binary_path = utils.find_binary(mtr_binary_name)
+        local_ipv6 = ipaddress.IPv6Address('::1')
+        app_mtr = mtr.TraceRoute(
+            mtr_binary_path=mtr_binary_path,
+            local_ipv4=None,
+            local_ipv6=local_ipv6
+        )
+        reactor.spawnProcess(app_mtr, mtr_binary_name, [mtr_binary_path], {})
+
+        def _test_ipv6_callback(target_ip, hops):
+            self.assertEqual(target_ip, ipaddress.IPv6Address('::1'))
+            self.assertEqual(len(hops), 1)
+            hop = hops[0]
+            counter, hop_ip, ms, proto, port = hop
+            self.assertEqual(counter, 1)
+            self.assertEqual(hop_ip, '::1')
+            self.assertIsInstance(ms, int)
+            self.assertEqual(proto, 'tcp')
+            self.assertEqual(port, 8080)
+            done['tcp6'] = True
+            _check_tests_done()
+
+        def _test_ipv6_error(counter, joined_request, error, extra):
+            done['tcp6'] = True
+            _check_tests_done()
+        
+        target_ip = utils.parse_ip('::1')
+        app_mtr.trace(_test_ipv6_callback, _test_ipv6_error, target_ip,
+                      protocol='tcp', port=8080)
 
         # Start reactor to initiate the tests
         reactor.run()

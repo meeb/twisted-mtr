@@ -140,13 +140,25 @@ class TraceRoute(protocol.ProcessProtocol):
         log.debug(f'Sending MTR request "{line.strip()}"')
         self.transport.write(line.encode())
 
-    def trace(self, callback, errback, ip_address, extra=None):
+    def trace(self, callback, errback, ip_address, protocol='icmp', port=None, extra=None):
         '''
             A higher level method that chains send-probe requests with
             increasing TTLs until an error is recieved or the responding IP is
             that of the target IP. Note that unlike lower level methods
             ip_address here is an IPAddress object not a string.
         '''
+        if protocol not in ('icmp', 'tcp'):
+            raise MTRError(f'Protocol must be one of icmp or tcp, '
+                           f'got: {protocol}')
+        if protocol == 'tcp':
+            if not port:
+                raise MTRError(f'Port must be set if the protocol is tcp')
+            try:
+                port = int(port)
+            except (TypeError, ValueError) as e:
+                raise MTRError(f'Port must be an int: {e}') from e
+            if not 0 < port < 65535:
+                raise MTRError(f'Port must be between 0 and 65535, got: {port}')
         hops = []
         ttl = 1
         if ip_address.version == 4:
@@ -168,7 +180,7 @@ class TraceRoute(protocol.ProcessProtocol):
 
         def _got_reply(c, request, line, extra):
             # Callback for a single request response
-            hop_num, no_reply_hops = extra
+            hop_num, no_reply_hops, protocol, port = extra
             send_next = False
             trace_complete = False
             ttl = None
@@ -179,20 +191,20 @@ class TraceRoute(protocol.ProcessProtocol):
             if response_type == 'ttl-expired':
                 # Not reached the end of the trace yet, expiry notice from hop:
                 #   ttl-expired ip-4 10.0.0.1 round-trip-time 400
-                hops.append((hop_num, line[2], int(line[4])))
+                hops.append((hop_num, line[2], int(line[4]), protocol, port))
                 # Flag to trace to the next hop as we're not done
                 send_next = True
                 ttl = int(request[-1])
             elif response_type == 'reply':
                 # Reached the end of the trace, reply from the target IP
                 #   reply ip-4 1.2.3.4 round-trip-time 254144
-                hops.append((hop_num, line[2], int(line[4])))
+                hops.append((hop_num, line[2], int(line[4]), protocol, port))
                 # Mark the trace as complete
                 trace_complete = True
             elif response_type == 'no-reply':
                 # No reply from IP
                 #    no-reply
-                hops.append((hop_num, None, None))
+                hops.append((hop_num, None, None, protocol, port))
                 no_reply_hops += 1
                 # Check if we should try additional hops
                 if no_reply_hops >= self.NO_REPLY_MAX_TTL:
@@ -223,7 +235,7 @@ class TraceRoute(protocol.ProcessProtocol):
                           f'{ttl}: too many probes in flight, will retry in '
                           f'{self.RETRY_WAIT} seconds...')
                 reactor.callLater(self.RETRY_WAIT, trace_to_hop,
-                                  str(ip_address), ttl, extra)
+                                  str(ip_address), ttl, protocol, port, extra)
                 return
             elif response_type == 'permission-denied':
                 # The operating system denied permission to send the probe with
@@ -241,7 +253,8 @@ class TraceRoute(protocol.ProcessProtocol):
                 return
             if trace_complete:
                 # We're all done, fire the upstream callback
-                hops_log = ' '.join(f'{hop}|{ip},{ms}' for hop, ip, ms in hops)
+                hops_log = ' '.join(f'{hop}|{ip},{ms} ({proto}:{port})' for 
+                    hop, ip, ms, proto, port in hops)
                 log.debug(f'Completed trace to {ip_address}: {hops_log}')
                 callback(ip_address, hops)
             elif send_next:
@@ -249,11 +262,14 @@ class TraceRoute(protocol.ProcessProtocol):
                 trace_to_hop(
                     str(ip_address),
                     ttl + 1,
-                    (hop_num + 1, no_reply_hops)
+                    protocol,
+                    port,
+                    (hop_num + 1, no_reply_hops, protocol, port),
                 )
 
         def _got_error(c, request, error, extra):
             # Error callback for a single request response
+            hop_num, no_reply_hops, protocol, port = extra
             if error == 'timeout':
                 # mtr-packet didn't reply in time, retry it
                 target_ip = request[4]
@@ -261,24 +277,27 @@ class TraceRoute(protocol.ProcessProtocol):
                 log.error(f'Probe to {target_ip} with TTL {ttl} had no reply '
                           f'from mtr, retrying...')
                 reactor.callLater(self.RETRY_WAIT, trace_to_hop,
-                                  target_ip, ttl, extra)
-                #trace_to_hop(target_ip, ttl, extra)
+                                  target_ip, ttl, protocol, port, extra)
             else:
                 # Something else went wrong, send it to the upstream errback()
                 errback(c, request, error, extra)
 
-        def trace_to_hop(target_ip, ttl, extra):
+        def trace_to_hop(target_ip, ttl, protocol, port, extra):
             # Make a single send-probe request
             request = [
                 'send-probe',
                 local_family, local_ip,
                 target_family, target_ip,
                 'timeout', str(self.REQUEST_TIMEOUT),
-                'ttl', str(ttl)
+                'protocol', protocol
             ]
+            if protocol == 'tcp':
+                request += ['port', str(port)]
+            request += ['ttl', str(ttl)]
             self.mtr_request(_got_reply, _got_error, request, extra)
 
         # Start the trace off, (hop_num, no_reply_hops) stored in "extra"
         log.debug(f'Starting trace to: {ip_address}')
         ttl, hop_num, no_reply_hops = 1, 1, 0
-        trace_to_hop(str(ip_address), ttl, (hop_num, no_reply_hops))
+        extra = (hop_num, no_reply_hops, protocol, port)
+        trace_to_hop(str(ip_address), ttl, protocol, port, extra)

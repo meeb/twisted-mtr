@@ -35,7 +35,7 @@ if __name__ == '__main__':
     # Replace with your local IPv6 address
     # Note that if you set this to an IP address not available on your system
     # your traceroutes will simply all time out
-    local_ipv6 = ipaddress.IPv6Address('2000:1:2:3:4:5:6:7')
+    local_ipv6 = ipaddress.IPv6Address('2404:1:2:3:4:5:6:7')
 
     # Create the TraceRoute Twisted process object
     app_mtr = mtr.TraceRoute(
@@ -55,8 +55,8 @@ if __name__ == '__main__':
     def _test_traceroute_callback(target_ip, hops):
         log.info(f'Completed traceroute to: {target_ip}')
         completed.add(str(target_ip))
-        for (hop_num, hop_ip, microseconds) in hops:
-            log.info(f' - {hop_num} {hop_ip} {microseconds}')
+        for (hop_num, hop_ip, microseconds, protocol, port) in hops:
+            log.info(f' - {hop_num} {hop_ip} {microseconds} ({protocol}:{port})')
         if requested == completed:
             log.info('All traces complete, stopping reactor')
             reactor.stop()
@@ -75,7 +75,8 @@ if __name__ == '__main__':
     app_mtr.trace(_test_traceroute_callback, _test_trace_error, target_ip)
     target_ip = utils.parse_ip('1.1.1.1')
     requested.add(str(target_ip))
-    app_mtr.trace(_test_traceroute_callback, _test_trace_error, target_ip)
+    app_mtr.trace(_test_traceroute_callback, _test_trace_error, target_ip,
+                  protocol='tcp', port=53)
     target_ip = utils.parse_ip('2404:6800:4015:802::200e')
     requested.add(str(target_ip))
     app_mtr.trace(_test_traceroute_callback, _test_trace_error, target_ip)
