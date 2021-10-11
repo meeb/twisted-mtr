@@ -14,7 +14,7 @@ class TraceRoute(protocol.ProcessProtocol):
     WAIT_TIMEOUT = 7      # Seconds, less than the 10 second timeout MTR uses
     RETRY_WAIT = 3        # Seconds, time to wait before retrying requests
     MAX_TTL = 50          # Maximum TTL, this also sets as max route hops
-    NO_REPLY_MAX_TTL = 10 # Maximum number of hops to try after a no-reply
+    NO_REPLY_MAX_TTL = 5  # Maximum number of hops to try after a no-reply
     # NOTE: WAIT_TIMEOUT must be greater than REQUEST_TIMEOUT
     # NOTE: (REQUEST_TIMEOUT * NO_REPLY_MAX_TTL) should be LESS than 60
 
