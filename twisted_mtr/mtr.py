@@ -180,7 +180,7 @@ class TraceRoute(protocol.ProcessProtocol):
 
         def _got_reply(c, request, line, extra):
             # Callback for a single request response
-            hop_num, no_reply_hops, protocol, port = extra
+            hop_num, no_reply_hops, protocol, port, attempts = extra
             send_next = False
             trace_complete = False
             ttl = None
@@ -264,20 +264,23 @@ class TraceRoute(protocol.ProcessProtocol):
                     ttl + 1,
                     protocol,
                     port,
-                    (hop_num + 1, no_reply_hops, protocol, port),
+                    (hop_num + 1, no_reply_hops, protocol, port, 0),
                 )
 
         def _got_error(c, request, error, extra):
             # Error callback for a single request response
-            hop_num, no_reply_hops, protocol, port = extra
+            hop_num, no_reply_hops, protocol, port, attempts = extra
+            attempts += 1
             if error == 'timeout':
-                # mtr-packet didn't reply in time, retry it
+                # This is a timeout where mtr-packet didn't respond at all
                 target_ip = request[4]
-                ttl = request[-1]
-                log.error(f'Probe to {target_ip} with TTL {ttl} had no reply '
-                          f'from mtr, retrying...')
+                ttl = int(request[-1])
+                extra = (hop_num, no_reply_hops, protocol, port, attempts)
+                log.error(f'Probe to {target_ip} with TTL {ttl} had no '
+                            f'reply from mtr, retry '
+                            f'attempt {attempts}...')
                 reactor.callLater(self.RETRY_WAIT, trace_to_hop,
-                                  target_ip, ttl, protocol, port, extra)
+                                    target_ip, ttl, protocol, port, extra)
             else:
                 # Something else went wrong, send it to the upstream errback()
                 errback(c, request, error, extra)
@@ -299,5 +302,5 @@ class TraceRoute(protocol.ProcessProtocol):
         # Start the trace off, (hop_num, no_reply_hops) stored in "extra"
         log.debug(f'Starting trace to: {ip_address}')
         ttl, hop_num, no_reply_hops = 1, 1, 0
-        extra = (hop_num, no_reply_hops, protocol, port)
+        extra = (hop_num, no_reply_hops, protocol, port, 0)
         trace_to_hop(str(ip_address), ttl, protocol, port, extra)
