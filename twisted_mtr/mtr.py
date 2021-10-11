@@ -273,7 +273,7 @@ class TraceRoute(protocol.ProcessProtocol):
             if error == 'timeout':
                 # mtr-packet didn't reply in time, retry it
                 target_ip = request[4]
-                ttl = request[8]
+                ttl = request[-1]
                 log.error(f'Probe to {target_ip} with TTL {ttl} had no reply '
                           f'from mtr, retrying...')
                 reactor.callLater(self.RETRY_WAIT, trace_to_hop,
