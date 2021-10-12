@@ -182,7 +182,7 @@ class TraceRoute(protocol.ProcessProtocol):
 
         def _got_reply(c, request, line, extra):
             # Callback for a single request response
-            hop_num, no_reply_hops, protocol, port, attempts = extra
+            ts, hop_num, no_reply_hops, protocol, port, attempts = extra
             send_next = False
             trace_complete = False
             ttl = None
@@ -258,7 +258,7 @@ class TraceRoute(protocol.ProcessProtocol):
                 hops_log = ' '.join(f'{hop}|{ip},{ms}' for hop, ip, ms in hops)
                 log.debug(f'Completed {protocol}:{port} trace to '
                           f'{ip_address}: {hops_log}')
-                callback(ip_address, protocol, port, hops)
+                callback(ts, ip_address, protocol, port, hops)
             elif send_next:
                 # Send the request to the next hop
                 trace_to_hop(
@@ -266,18 +266,18 @@ class TraceRoute(protocol.ProcessProtocol):
                     ttl + 1,
                     protocol,
                     port,
-                    (hop_num + 1, no_reply_hops, protocol, port, 0),
+                    (ts, hop_num + 1, no_reply_hops, protocol, port, 0),
                 )
 
         def _got_error(c, request, error, extra):
             # Error callback for a single request response
-            hop_num, no_reply_hops, protocol, port, attempts = extra
+            ts, hop_num, no_reply_hops, protocol, port, attempts = extra
             attempts += 1
             if error == 'timeout':
                 # This is a timeout where mtr-packet didn't respond at all
                 target_ip = request[4]
                 ttl = int(request[-1])
-                extra = (hop_num, no_reply_hops, protocol, port, attempts)
+                extra = (ts, hop_num, no_reply_hops, protocol, port, attempts)
                 log.error(f'Probe to {target_ip} with TTL {ttl} had no '
                             f'reply from mtr, retry '
                             f'attempt {attempts}...')
@@ -304,5 +304,5 @@ class TraceRoute(protocol.ProcessProtocol):
         # Start the trace off, (hop_num, no_reply_hops) stored in "extra"
         log.debug(f'Starting trace to: {ip_address}')
         ttl, hop_num, no_reply_hops = 1, 1, 0
-        extra = (hop_num, no_reply_hops, protocol, port, 0)
+        extra = (time(), hop_num, no_reply_hops, protocol, port, 0)
         trace_to_hop(str(ip_address), ttl, protocol, port, extra)

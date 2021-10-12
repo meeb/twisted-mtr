@@ -52,8 +52,9 @@ if __name__ == '__main__':
     completed = set()
 
     # Success callback
-    def _test_traceroute_callback(target_ip, protocol, port, hops):
-        log.info(f'Completed traceroute to: {target_ip} ({protocol}:{port})')
+    def _test_traceroute_callback(timestamp, target_ip, protocol, port, hops):
+        log.info(f'Completed traceroute started at {timestamp} to: '
+                 f'{target_ip} ({protocol}:{port})')
         completed.add(str(target_ip))
         for (hop_num, hop_ip, microseconds) in hops:
             log.info(f' - {hop_num} {hop_ip} {microseconds}')

@@ -66,11 +66,12 @@ class TwstedMTRTestCase(unittest.TestCase):
         )
         reactor.spawnProcess(app_mtr, mtr_binary_name, [mtr_binary_path], {})
 
-        def _test_ipv4_callback(target_ip, protocol, port, hops):
+        def _test_ipv4_callback(ts, target_ip, protocol, port, hops):
             self.assertEqual(target_ip, ipaddress.IPv4Address('127.0.0.1'))
             self.assertEqual(len(hops), 1)
             hop = hops[0]
             counter, hop_ip, ms = hop
+            self.assertIsInstance(ts, float)
             self.assertEqual(counter, 1)
             self.assertEqual(hop_ip, '127.0.0.1')
             self.assertIsInstance(ms, int)
@@ -97,11 +98,12 @@ class TwstedMTRTestCase(unittest.TestCase):
         )
         reactor.spawnProcess(app_mtr, mtr_binary_name, [mtr_binary_path], {})
 
-        def _test_ipv6_callback(target_ip, protocol, port, hops):
+        def _test_ipv6_callback(ts, target_ip, protocol, port, hops):
             self.assertEqual(target_ip, ipaddress.IPv6Address('::1'))
             self.assertEqual(len(hops), 1)
             hop = hops[0]
             counter, hop_ip, ms = hop
+            self.assertIsInstance(ts, float)
             self.assertEqual(counter, 1)
             self.assertEqual(hop_ip, '::1')
             self.assertIsInstance(ms, int)
@@ -128,11 +130,12 @@ class TwstedMTRTestCase(unittest.TestCase):
         )
         reactor.spawnProcess(app_mtr, mtr_binary_name, [mtr_binary_path], {})
 
-        def _test_ipv4_callback(target_ip, protocol, port, hops):
+        def _test_ipv4_callback(ts, target_ip, protocol, port, hops):
             self.assertEqual(target_ip, ipaddress.IPv4Address('127.0.0.1'))
             self.assertEqual(len(hops), 1)
             hop = hops[0]
             counter, hop_ip, ms = hop
+            self.assertIsInstance(ts, float)
             self.assertEqual(counter, 1)
             self.assertEqual(hop_ip, '127.0.0.1')
             self.assertIsInstance(ms, int)
@@ -160,11 +163,12 @@ class TwstedMTRTestCase(unittest.TestCase):
         )
         reactor.spawnProcess(app_mtr, mtr_binary_name, [mtr_binary_path], {})
 
-        def _test_ipv6_callback(target_ip, protocol, port, hops):
+        def _test_ipv6_callback(ts, target_ip, protocol, port, hops):
             self.assertEqual(target_ip, ipaddress.IPv6Address('::1'))
             self.assertEqual(len(hops), 1)
             hop = hops[0]
             counter, hop_ip, ms = hop
+            self.assertIsInstance(ts, float)
             self.assertEqual(counter, 1)
             self.assertEqual(hop_ip, '::1')
             self.assertIsInstance(ms, int)

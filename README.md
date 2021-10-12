@@ -157,11 +157,12 @@ When the traceroute completes or errors the callbacks will be called with the
 following parameters:
 
 ```python
-def success_callback_function(target_ip, protocol, port, hops):
+def success_callback_function(timestamp, target_ip, protocol, port, hops):
     # target_ip is an IPvNAddress object of the address the traceroute was to
     # protocol is either 'icmp' or 'tcp'
     # port is the TCP port if the trace type is 'tcp', otherwise -1
-    print(f'Completed trace to: {target_ip} ({protocol}:{port})')
+    print(f'Completed trace started at {timestamp} to: {target_ip} '
+          f'({protocol}:{port})')
     # hops is a list of the traceroute hops, each hop has 5 parameters, e.g.
     #hops = [
     #    (1, '10.0.0.1', 20),
