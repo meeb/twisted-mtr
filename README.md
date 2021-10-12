@@ -147,9 +147,9 @@ my_traceroute_object.trace(
     # An IPv4Address or IPv6Address object of the address to traceroute to
     ipaddress.IPv4Address('1.1.1.1'),
     # The protocol to use, defaults to 'icmp', can be 'icmp' or 'tcp'
-    protocol='icmp',
+    protocol='tcp',
     # The port number to use if the protocol is 'tcp', otherwise ignored
-    port=None
+    port=443
 )
 ```
 
@@ -157,16 +157,18 @@ When the traceroute completes or errors the callbacks will be called with the
 following parameters:
 
 ```python
-def success_callback_function(target_ip, hops):
+def success_callback_function(target_ip, protocol, port, hops):
     # target_ip is an IPvNAddress object of the address the traceroute was to
-    print(f'Completed trace to: {target_ip}')
+    # protocol is either 'icmp' or 'tcp'
+    # port is the TCP port if the trace type is 'tcp', otherwise -1
+    print(f'Completed trace to: {target_ip} ({protocol}:{port})')
     # hops is a list of the traceroute hops, each hop has 5 parameters, e.g.
     #hops = [
-    #    (1, '10.0.0.1', 20, 'icmp', None),
-    #    (2, '22.22.22.22', 111, 'icmp', None),
-    #    (3, '33.33.33.33', 222, 'icmp', None),
-    #    (4,  None, None, 'icmp', None),
-    #    (5, '55.55.55.55', 444, 'icmp', None),
+    #    (1, '10.0.0.1', 20),
+    #    (2, '22.22.22.22', 111),
+    #    (3, '33.33.33.33', 222),
+    #    (4,  None, None),
+    #    (5, '55.55.55.55', 444),
     #]
     # The IP and milliseconds of the hop may be None if the hop did not
     # respond to the traceroute request or it timed out. Parameter 4 is the
@@ -174,9 +176,8 @@ def success_callback_function(target_ip, hops):
     # 'tcp'. Example TCP trace hop:
     #  (1, '10.0.0.1', 20, 'tcp', 443)
     for hop in hops:
-        hop_number, hop_ip, latency_in_milliseconds, protocol, port = hop
-        print(f' - {hop}: {hop_ip} {latency_in_milliseconds} ms '
-              f'({protocol}:{port})')
+        hop_number, hop_ip, latency_in_milliseconds = hop
+        print(f' - {hop}: {hop_ip} {latency_in_milliseconds} ms')
 
 def failure_callback_function(hop_number, request, error, extra):
     # Errors are things like mtr-packet return a serious error for your

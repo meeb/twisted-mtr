@@ -140,7 +140,7 @@ class TraceRoute(protocol.ProcessProtocol):
         log.debug(f'Sending MTR request "{line.strip()}"')
         self.transport.write(line.encode())
 
-    def trace(self, callback, errback, ip_address, protocol='icmp', port=None, extra=None):
+    def trace(self, callback, errback, ip_address, protocol='icmp', port=-1, extra=None):
         '''
             A higher level method that chains send-probe requests with
             increasing TTLs until an error is recieved or the responding IP is
@@ -158,7 +158,9 @@ class TraceRoute(protocol.ProcessProtocol):
             except (TypeError, ValueError) as e:
                 raise MTRError(f'Port must be an int: {e}') from e
             if not 0 < port < 65535:
-                raise MTRError(f'Port must be between 0 and 65535, got: {port}')
+                raise MTRError(f'Port must be between 0-65535, got: {port}')
+        else:
+            port = -1
         hops = []
         ttl = 1
         if ip_address.version == 4:
@@ -191,20 +193,20 @@ class TraceRoute(protocol.ProcessProtocol):
             if response_type == 'ttl-expired':
                 # Not reached the end of the trace yet, expiry notice from hop:
                 #   ttl-expired ip-4 10.0.0.1 round-trip-time 400
-                hops.append((hop_num, line[2], int(line[4]), protocol, port))
+                hops.append((hop_num, line[2], int(line[4])))
                 # Flag to trace to the next hop as we're not done
                 send_next = True
                 ttl = int(request[-1])
             elif response_type == 'reply':
                 # Reached the end of the trace, reply from the target IP
                 #   reply ip-4 1.2.3.4 round-trip-time 254144
-                hops.append((hop_num, line[2], int(line[4]), protocol, port))
+                hops.append((hop_num, line[2], int(line[4])))
                 # Mark the trace as complete
                 trace_complete = True
             elif response_type == 'no-reply':
                 # No reply from IP
                 #    no-reply
-                hops.append((hop_num, None, None, protocol, port))
+                hops.append((hop_num, None, None))
                 no_reply_hops += 1
                 # Check if we should try additional hops
                 if no_reply_hops >= self.NO_REPLY_MAX_TTL:
@@ -253,10 +255,10 @@ class TraceRoute(protocol.ProcessProtocol):
                 return
             if trace_complete:
                 # We're all done, fire the upstream callback
-                hops_log = ' '.join(f'{hop}|{ip},{ms} ({proto}:{port})' for 
-                    hop, ip, ms, proto, port in hops)
-                log.debug(f'Completed trace to {ip_address}: {hops_log}')
-                callback(ip_address, hops)
+                hops_log = ' '.join(f'{hop}|{ip},{ms}' for hop, ip, ms in hops)
+                log.debug(f'Completed {protocol}:{port} trace to '
+                          f'{ip_address}: {hops_log}')
+                callback(ip_address, protocol, port, hops)
             elif send_next:
                 # Send the request to the next hop
                 trace_to_hop(

@@ -52,11 +52,11 @@ if __name__ == '__main__':
     completed = set()
 
     # Success callback
-    def _test_traceroute_callback(target_ip, hops):
-        log.info(f'Completed traceroute to: {target_ip}')
+    def _test_traceroute_callback(target_ip, protocol, port, hops):
+        log.info(f'Completed traceroute to: {target_ip} ({protocol}:{port})')
         completed.add(str(target_ip))
-        for (hop_num, hop_ip, microseconds, protocol, port) in hops:
-            log.info(f' - {hop_num} {hop_ip} {microseconds} ({protocol}:{port})')
+        for (hop_num, hop_ip, microseconds) in hops:
+            log.info(f' - {hop_num} {hop_ip} {microseconds}')
         if requested == completed:
             log.info('All traces complete, stopping reactor')
             reactor.stop()

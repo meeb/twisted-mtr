@@ -66,16 +66,16 @@ class TwstedMTRTestCase(unittest.TestCase):
         )
         reactor.spawnProcess(app_mtr, mtr_binary_name, [mtr_binary_path], {})
 
-        def _test_ipv4_callback(target_ip, hops):
+        def _test_ipv4_callback(target_ip, protocol, port, hops):
             self.assertEqual(target_ip, ipaddress.IPv4Address('127.0.0.1'))
             self.assertEqual(len(hops), 1)
             hop = hops[0]
-            counter, hop_ip, ms, proto, port = hop
+            counter, hop_ip, ms = hop
             self.assertEqual(counter, 1)
             self.assertEqual(hop_ip, '127.0.0.1')
             self.assertIsInstance(ms, int)
-            self.assertEqual(proto, 'icmp')
-            self.assertEqual(port, None)
+            self.assertEqual(protocol, 'icmp')
+            self.assertEqual(port, -1)
             done['icmp4'] = True
             _check_tests_done()
 
@@ -97,16 +97,16 @@ class TwstedMTRTestCase(unittest.TestCase):
         )
         reactor.spawnProcess(app_mtr, mtr_binary_name, [mtr_binary_path], {})
 
-        def _test_ipv6_callback(target_ip, hops):
+        def _test_ipv6_callback(target_ip, protocol, port, hops):
             self.assertEqual(target_ip, ipaddress.IPv6Address('::1'))
             self.assertEqual(len(hops), 1)
             hop = hops[0]
-            counter, hop_ip, ms, proto, port = hop
+            counter, hop_ip, ms = hop
             self.assertEqual(counter, 1)
             self.assertEqual(hop_ip, '::1')
             self.assertIsInstance(ms, int)
-            self.assertEqual(proto, 'icmp')
-            self.assertEqual(port, None)
+            self.assertEqual(protocol, 'icmp')
+            self.assertEqual(port, -1)
             done['icmp6'] = True
             _check_tests_done()
 
@@ -128,15 +128,15 @@ class TwstedMTRTestCase(unittest.TestCase):
         )
         reactor.spawnProcess(app_mtr, mtr_binary_name, [mtr_binary_path], {})
 
-        def _test_ipv4_callback(target_ip, hops):
+        def _test_ipv4_callback(target_ip, protocol, port, hops):
             self.assertEqual(target_ip, ipaddress.IPv4Address('127.0.0.1'))
             self.assertEqual(len(hops), 1)
             hop = hops[0]
-            counter, hop_ip, ms, proto, port = hop
+            counter, hop_ip, ms = hop
             self.assertEqual(counter, 1)
             self.assertEqual(hop_ip, '127.0.0.1')
             self.assertIsInstance(ms, int)
-            self.assertEqual(proto, 'tcp')
+            self.assertEqual(protocol, 'tcp')
             self.assertEqual(port, 8080)
             done['tcp4'] = True
             _check_tests_done()
@@ -160,15 +160,15 @@ class TwstedMTRTestCase(unittest.TestCase):
         )
         reactor.spawnProcess(app_mtr, mtr_binary_name, [mtr_binary_path], {})
 
-        def _test_ipv6_callback(target_ip, hops):
+        def _test_ipv6_callback(target_ip, protocol, port, hops):
             self.assertEqual(target_ip, ipaddress.IPv6Address('::1'))
             self.assertEqual(len(hops), 1)
             hop = hops[0]
-            counter, hop_ip, ms, proto, port = hop
+            counter, hop_ip, ms = hop
             self.assertEqual(counter, 1)
             self.assertEqual(hop_ip, '::1')
             self.assertIsInstance(ms, int)
-            self.assertEqual(proto, 'tcp')
+            self.assertEqual(protocol, 'tcp')
             self.assertEqual(port, 8080)
             done['tcp6'] = True
             _check_tests_done()
