@@ -149,7 +149,9 @@ my_traceroute_object.trace(
     # The protocol to use, defaults to 'icmp', can be 'icmp' or 'tcp'
     protocol='tcp',
     # The port number to use if the protocol is 'tcp', otherwise ignored
-    port=443
+    port=443,
+    # TTL to start the trace at, defaults to 1, set to 2 or more to skip hops
+    ttl=1
 )
 ```
 

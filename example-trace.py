@@ -77,7 +77,7 @@ if __name__ == '__main__':
     target_ip = utils.parse_ip('1.1.1.1')
     requested.add(str(target_ip))
     app_mtr.trace(_test_traceroute_callback, _test_trace_error, target_ip,
-                  protocol='tcp', port=53)
+                  protocol='tcp', port=53, ttl=3)
     target_ip = utils.parse_ip('2404:6800:4015:802::200e')
     requested.add(str(target_ip))
     app_mtr.trace(_test_traceroute_callback, _test_trace_error, target_ip)

@@ -140,7 +140,8 @@ class TraceRoute(protocol.ProcessProtocol):
         log.debug(f'Sending MTR request "{line.strip()}"')
         self.transport.write(line.encode())
 
-    def trace(self, callback, errback, ip_address, protocol='icmp', port=-1, extra=None):
+    def trace(self, callback, errback, ip_address, protocol='icmp', port=-1,
+              ttl=1, extra=None):
         '''
             A higher level method that chains send-probe requests with
             increasing TTLs until an error is recieved or the responding IP is
@@ -161,8 +162,13 @@ class TraceRoute(protocol.ProcessProtocol):
                 raise MTRError(f'Port must be between 0-65535, got: {port}')
         else:
             port = -1
+        if not isinstance(ttl, int):
+            raise MTRError(f'TTL must be an int, got: {type(ttl)}')
         hops = []
-        ttl = 1
+        if ttl > 1:
+            # Pad the skipped hops with empty results
+            for i in range(1, ttl):
+                hops.append((i, None, None))
         if ip_address.version == 4:
             if not self.local_ipv4:
                 raise MTRError('Trace to an IPv4 address was requested but '
@@ -282,7 +288,7 @@ class TraceRoute(protocol.ProcessProtocol):
                             f'reply from mtr, retry '
                             f'attempt {attempts}...')
                 reactor.callLater(self.RETRY_WAIT, trace_to_hop,
-                                    target_ip, ttl, protocol, port, extra)
+                                  target_ip, ttl, protocol, port, extra)
             else:
                 # Something else went wrong, send it to the upstream errback()
                 errback(c, request, error, extra)
@@ -303,6 +309,6 @@ class TraceRoute(protocol.ProcessProtocol):
 
         # Start the trace off, (hop_num, no_reply_hops) stored in "extra"
         log.debug(f'Starting trace to: {ip_address}')
-        ttl, hop_num, no_reply_hops = 1, 1, 0
+        hop_num, no_reply_hops = ttl, 0
         extra = (time(), hop_num, no_reply_hops, protocol, port, 0)
         trace_to_hop(str(ip_address), ttl, protocol, port, extra)
