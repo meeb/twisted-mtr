@@ -148,12 +148,13 @@ class TraceRoute(protocol.ProcessProtocol):
             that of the target IP. Note that unlike lower level methods
             ip_address here is an IPAddress object not a string.
         '''
-        if protocol not in ('icmp', 'tcp'):
-            raise MTRError(f'Protocol must be one of icmp or tcp, '
+        if protocol not in ('icmp', 'tcp', 'udp'):
+            raise MTRError(f'Protocol must be one of icmp, tcp or udp, '
                            f'got: {protocol}')
-        if protocol == 'tcp':
+        if protocol in ('tcp', 'udp'):
             if not port:
-                raise MTRError(f'Port must be set if the protocol is tcp')
+                raise MTRError(f'Port must be set if the protocol is '
+                               f'tcp or udp')
             try:
                 port = int(port)
             except (TypeError, ValueError) as e:

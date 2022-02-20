@@ -73,7 +73,8 @@ if __name__ == '__main__':
     app_mtr.trace(_test_traceroute_callback, _test_trace_error, target_ip)
     target_ip = utils.parse_ip('8.8.8.8')
     requested.add(str(target_ip))
-    app_mtr.trace(_test_traceroute_callback, _test_trace_error, target_ip)
+    app_mtr.trace(_test_traceroute_callback, _test_trace_error, target_ip,
+                  protocol='udp', port=53)
     target_ip = utils.parse_ip('1.1.1.1')
     requested.add(str(target_ip))
     app_mtr.trace(_test_traceroute_callback, _test_trace_error, target_ip,
